@@ -5,7 +5,11 @@
 #include <cmath>
 #include <ctime>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <iomanip>
 #include <stdio.h>
+#include <sys/stat.h>
 
 extern "C"
 {
@@ -75,13 +79,30 @@ int main( int argc, const char** argv )
     double prev_t, curr_t;
     int prev_dx, prev_ut;
 
-    String face_cascade_name = "/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml";
+    int img_counter = 0;
+
+    string face_cascade_name = "/usr/local/share/OpenCV/haarcascades/haarcascade_frontalface_default.xml";
     CascadeClassifier face_cascade;
     if( !face_cascade.load( face_cascade_name ) )
     {
         printf("Error loading %s\n", face_cascade_name.c_str());
         return -1;
     };
+
+    struct stat sb;
+    string out_dir = "./result";
+    if (!(stat(out_dir.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode))) {
+        const int dir_err = mkdir(out_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+        if (-1 == dir_err)
+        {
+            printf("Error creating directory!n");
+            exit(1);
+        }
+    }
+    else
+    {
+        printf("Output dir: %s\n", out_dir.c_str());
+    }
 
         // Buffer for data being read/ written on the i2c bus
     if(init()==-1)
@@ -203,6 +224,12 @@ int main( int argc, const char** argv )
             CvMat CvMatframe(frame);
             cvShowImage( "result", &CvMatframe );
 
+            ostringstream ss;
+            ss << out_dir << "/image" << setfill('0') << img_counter << ".jpg";
+            string filename(ss.str());
+            imwrite( filename.c_str(), frame );
+
+            img_counter ++;
 
             if( waitKey( 10 ) >= 0 )
             break;
